@@ -1,0 +1,58 @@
+{
+  "database": {
+    "schema": {
+      "users": {
+        "id": {
+          "type": "integer",
+          "description": "Unique identifier for the user"
+        },
+        "username": {
+          "type": "text",
+          "description": "Login username"
+        },
+        "password": {
+          "type": "text",
+          "description": "User's password"
+        },
+        "name": {
+          "type": "text",
+          "description": "User's full name"
+        },
+        "role": {
+          "type": "text",
+          "description": "User's role in the system"
+        },
+        "tabAccess": {
+          "type": "jsonb",
+          "description": "Custom tab access permissions for the user. Keys are tab IDs, values are 'view' or 'edit'."
+        },
+        "changeHistory": {
+          "type": "jsonb",
+          "description": "History of changes made to the user's record"
+        },
+        "academicInfo": {
+          "type": "jsonb",
+          "description": "Academic information for professional roles (institution, education, etc.)"
+        }
+      },
+      "roles": {
+        "id": {
+          "type": "text",
+          "description": "Unique identifier for the role (e.g., 'psicologo_chefe')"
+        },
+        "name": {
+          "type": "text",
+          "description": "Display name for the role (e.g., 'Psicólogo Chefe')"
+        },
+        "isCustom": {
+            "type": "boolean",
+            "description": "Flag to indicate if the role is custom or system-default"
+        },
+        "tabAccess": {
+          "type": "jsonb",
+          "description": "Tab access permissions for this role. Keys are tab IDs, values are 'view' or 'edit'."
+        }
+      }
+    }
+  }
+}
