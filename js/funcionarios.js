@@ -68,14 +68,17 @@ function populateFuncionarioRoleFilter() {
     }
 }
 
-export function renderFuncionarioList(filter = '', roleFilter = 'all') {
+export async function renderFuncionarioList(filter = '', roleFilter = 'all') {
     const funcionarioListContainer = document.getElementById('funcionario-list-container');
     if (!funcionarioListContainer) return;
     
-    // NEW: Populate the role filter dropdown with current roles from DB
+    // Exibe um indicador de carregamento
+    funcionarioListContainer.innerHTML = '<p>Carregando funcionários...</p>';
+    
+    // Popula o dropdown de filtro de funções
     populateFuncionarioRoleFilter();
 
-    // Check if the current user has view access to the 'funcionarios' tab
+    // Verifica se o usuário tem permissão para visualizar a lista de funcionários
     if (!checkTabAccess('funcionarios', 'view')) {
         funcionarioListContainer.innerHTML = '<p>Você não tem permissão para visualizar a lista de funcionários.</p>';
         const permissionsInfo = document.getElementById('permissions-view-info');
@@ -91,35 +94,52 @@ export function renderFuncionarioList(filter = '', roleFilter = 'all') {
         permissionsInfo.style.display = isDirector ? 'flex' : 'none';
     }
 
-    funcionarioListContainer.innerHTML = '';
-    const lowerCaseFilter = filter.toLowerCase();
-
-    // Filter out the current user if they are a director, as they cannot edit their own permissions this way.
-    // However, if no other employees match the filter, the director should still see their own card.
-    const currentUser = getCurrentUser();
-    const allUserRoles = ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'musictherapist', 'financeiro', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'];
-    
-    let filteredFuncionarios = db.users.filter(user =>
-        // Include users with a predefined role OR users with custom roles if they match the filter
-        (user.name.toLowerCase().includes(lowerCaseFilter)) &&
-        (roleFilter === 'all' || user.role === roleFilter)
-    );
-
-    // Separate the current director from the list if they are present
-    let directorSelf = null;
-    if (isDirector) {
-        directorSelf = filteredFuncionarios.find(user => user.id === currentUser.id);
-        filteredFuncionarios = filteredFuncionarios.filter(user => user.id !== currentUser.id);
-    }
-
-    if (filteredFuncionarios.length === 0) {
-        let message = 'Nenhum funcionário encontrado.';
-        if (filter === '') {
-            message = 'Nenhum funcionário cadastrado ainda.';
+    try {
+        // Busca todos os usuários do Supabase
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('*');
+            
+        if (error) throw error;
+        
+        // Se não houver usuários, exibe mensagem
+        if (!users || users.length === 0) {
+            funcionarioListContainer.innerHTML = '<p>Nenhum funcionário cadastrado ainda.</p>';
+            return;
         }
-        if (directorSelf) {
-            // If the director is the only one or no others match filter, show their own card disabled.
-            renderPermissionsView([directorSelf], true); // Pass true to indicate self-view/disabled state
+        
+        funcionarioListContainer.innerHTML = '';
+        const lowerCaseFilter = filter.toLowerCase();
+        
+        // Filtra os usuários com base no filtro de texto e função
+        let filteredFuncionarios = users.filter(user => {
+            const nameMatch = user.name && user.name.toLowerCase().includes(lowerCaseFilter);
+            const roleMatch = roleFilter === 'all' || user.role === roleFilter;
+            return nameMatch && roleMatch;
+        });
+        
+        // Separa o diretor atual da lista se estiver presente
+        const currentUser = getCurrentUser();
+        let directorSelf = null;
+        if (isDirector && currentUser) {
+            directorSelf = filteredFuncionarios.find(user => user.id === currentUser.id);
+            filteredFuncionarios = filteredFuncionarios.filter(user => user.id !== currentUser.id);
+        }
+
+        if (filteredFuncionarios.length === 0) {
+            let message = 'Nenhum funcionário encontrado.';
+            if (filter === '' && roleFilter === 'all') {
+                message = 'Nenhum funcionário cadastrado ainda.';
+            }
+            
+            if (directorSelf) {
+                // Se o diretor for o único ou nenhum outro corresponder ao filtro, mostra o próprio cartão desabilitado
+                renderPermissionsView([directorSelf], true); // Passa true para indicar visualização própria/estado desabilitado
+                return;
+            }
+            
+            // Se não houver funcionários e não for o diretor, exibe a mensagem
+            funcionarioListContainer.innerHTML = `<p>${message}</p>`;
             return;
         }
         funcionarioListContainer.innerHTML = `<p>${message}</p>`;
@@ -559,50 +579,78 @@ export function showEditPasswordModal(funcionarioId) {
     document.getElementById('modal-edit-password').style.display = 'flex';
 }
 
-export function saveFuncionarioChanges() {
-    // Check if the current user has edit access to the 'funcionarios' tab
-    if (!checkTabAccess('funcionarios', 'edit')) {
-        showNotification('Você não tem permissão para salvar alterações de funcionários.', 'error');
-        return;
-    }
+export async function saveFuncionarioChanges() {
+    try {
+        // Verifica se o usuário tem permissão para editar funcionários
+        if (!checkTabAccess('funcionarios', 'edit')) {
+            showNotification('Você não tem permissão para salvar alterações de funcionários.', 'error');
+            return false;
+        }
 
-    const funcionario = db.users.find(u => u.id === window.currentFuncionarioId);
-    if (!funcionario) return;
+        // Busca o funcionário atual no banco de dados
+        const { data: funcionario, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', window.currentFuncionarioId)
+            .single();
+            
+        if (fetchError) throw fetchError;
+        if (!funcionario) {
+            showNotification('Funcionário não encontrado.', 'error');
+            return false;
+        }
 
-    const currentUser = getCurrentUser();
-    // For director editing themselves, we explicitly prevent tab access modification here to prevent accidental lockout.
-    const isEditingSelfAsDirector = (funcionario.id === currentUser.id && isRoleAllowed(DIRECTOR_ONLY));
+        const currentUser = getCurrentUser();
+        // Impede que diretores alterem suas próprias permissões para evitar bloqueio acidental
+        const isEditingSelfAsDirector = (funcionario.id === currentUser.id && isRoleAllowed(DIRECTOR_ONLY));
 
+        const changes = [];
+        const updates = {};
+        const originalFuncionario = { ...funcionario };
+        const originalAcademicInfo = { ...(funcionario.academic_info || {}) }; // Ajuste para academic_info
 
-    const changes = [];
-    const originalFuncionario = { ...funcionario };
-    const originalAcademicInfo = { ...(funcionario.academicInfo || {}) }; // Deep copy for comparison
+        // Obtém o novo cargo
+        const role = document.getElementById('edit-funcionario-role').value;
+        if (role !== funcionario.role) {
+            changes.push({ field: 'Cargo', oldValue: funcionario.role, newValue: role });
+            updates.role = role;
+        }
 
-    const role = document.getElementById('edit-funcionario-role').value;
-    if(role !== funcionario.role) {
-        changes.push({ field: 'Cargo', oldValue: funcionario.role, newValue: role });
-        funcionario.role = role;
-    }
+        // Mapeia os campos do formulário para as propriedades do usuário
+        const fieldsToUpdate = [
+            { id: 'edit-funcionario-name', prop: 'name', label: 'Nome Completo' },
+            { id: 'edit-funcionario-cpf', prop: 'cpf', label: 'CPF' },
+            { id: 'edit-funcionario-phone', prop: 'phone', label: 'Celular' },
+            { id: 'edit-funcionario-email', prop: 'email', label: 'Email' },
+            { id: 'edit-funcionario-address', prop: 'address', label: 'Endereço' },
+        ];
 
-    const fieldsToUpdate = [
-        { id: 'edit-funcionario-name', prop: 'name', label: 'Nome Completo' },
-        { id: 'edit-funcionario-cpf', prop: 'cpf', label: 'CPF' },
-        { id: 'edit-funcionario-phone', prop: 'phone', label: 'Celular' },
-        { id: 'edit-funcionario-email', prop: 'email', label: 'Email' },
-        { id: 'edit-funcionario-address', prop: 'address', label: 'Endereço' },
-    ];
+        // Processa os campos básicos
+        fieldsToUpdate.forEach(({ id, prop, label }) => {
+            const input = document.getElementById(id);
+            if (input && input.value !== funcionario[prop]) {
+                changes.push({
+                    field: label,
+                    oldValue: funcionario[prop] || '',
+                    newValue: input.value.trim()
+                });
+                updates[prop] = input.value.trim();
+            }
+        });
 
-    // Handle academic info separately due to nested structure
-    let newAcademicInfo = {};
-    // Determine if academic info should be collected based on the NEW role OR if existing academic info is present
-    if (PROFESSIONAL_ROLES.includes(role) || (originalAcademicInfo && Object.keys(originalAcademicInfo).some(key => originalAcademicInfo[key]))) { 
-        newAcademicInfo = {
-            institution: document.getElementById('edit-funcionario-institution').value.trim(),
-            graduationPeriod: document.getElementById('edit-funcionario-graduation-period').value.trim(),
-            education: document.getElementById('edit-funcionario-education').value.trim(),
-            discipline: document.getElementById('edit-funcionario-discipline').value.trim()
-        };
-    }
+        // Processa as informações acadêmicas
+        let newAcademicInfo = {};
+        if (PROFESSIONAL_ROLES.includes(role) || (originalAcademicInfo && Object.keys(originalAcademicInfo).some(key => originalAcademicInfo[key]))) {
+            newAcademicInfo = {
+                institution: document.getElementById('edit-funcionario-institution')?.value.trim() || '',
+                graduation_period: document.getElementById('edit-funcionario-graduation-period')?.value.trim() || '',
+                education: document.getElementById('edit-funcienario-education')?.value.trim() || '',
+                discipline: document.getElementById('edit-funcionario-discipline')?.value.trim() || ''
+            };
+            
+            // Adiciona as informações acadêmicas ao objeto de atualizações
+            updates.academic_info = newAcademicInfo;
+        }
 
     // Compare and update academicInfo fields
     ['institution', 'graduationPeriod', 'education', 'discipline'].forEach(field => {
@@ -632,147 +680,126 @@ export function saveFuncionarioChanges() {
     let hasCustomAccess = false;
 
     // Only collect tab permissions if the current user is NOT the one being edited, OR if not a director
-    if (!isEditingSelfAsDirector) {
-        allSystemTabs.forEach(tab => {
-            const selectElement = document.getElementById(`edit-funcionario-tab-permissions-${tab.id}-select`);
-            if (selectElement) {
-                const accessLevel = selectElement.value;
-                if (accessLevel !== 'default') { // 'default' means no custom override, rely on role
-                    newTabAccess[tab.id] = accessLevel;
-                    hasCustomAccess = true;
-                }
-            }
         });
-    } else {
-        // If it's the current director editing themselves, preserve their existing tabAccess.
-        // The UI elements for tab permissions would be disabled for them.
-        Object.assign(newTabAccess, funcionario.tabAccess || {});
-        hasCustomAccess = (funcionario.tabAccess && Object.keys(funcionario.tabAccess).length > 0);
-    }
-    
-    const oldVisibleTabs = originalFuncionario.tabAccess || {};
-    // Ensure consistent key order for stringify comparison
-    const newTabsString = JSON.stringify(newTabAccess, Object.keys(newTabAccess).sort());
-    const oldTabsString = JSON.stringify(oldVisibleTabs, Object.keys(oldVisibleTabs).sort());
-    
-    if (newTabsString !== oldTabsString) {
-        changes.push({
-            field: 'Permissões de Aba',
-            oldValue: oldTabsString === '{}' ? 'Padrão do Cargo' : oldTabsString,
-            newValue: newTabsString === '{}' ? 'Padrão do Cargo' : newTabsString,
-        });
-        funcionario.tabAccess = hasCustomAccess ? newTabAccess : null;
-    }
 
-    if (changes.length > 0) {
-        if (!funcionario.changeHistory) {
-            funcionario.changeHistory = [];
+        // Processa as permissões de abas se não for o próprio diretor
+        if (!isEditingSelfAsDirector) {
+            const tabPermissions = {};
+            const tabCheckboxes = document.querySelectorAll('#edit-funcionario-permissions input[type="checkbox"]');
+            tabCheckboxes.forEach(checkbox => {
+                const tab = checkbox.dataset.tab;
+                const permissionType = checkbox.dataset.permissionType;
+                if (!tabPermissions[tab]) {
+                    tabPermissions[tab] = { view: false, edit: false };
+        // Verifica se o usuário tem permissão para excluir funcionários
+        if (!checkTabAccess('funcionarios', 'edit') || !isRoleAllowed(DIRECTOR_ONLY)) {
+            showNotification('Você não tem permissão para excluir funcionários.', 'error');
+            return false;
         }
         
-        funcionario.changeHistory.push({
-            id: db.nextChangeId++,
-            date: new Date().toISOString(),
-            changedBy: getCurrentUser().name,
-            changes: changes
-        });
+        // Verifica se o funcionário a ser excluído é o próprio usuário
+        const currentUser = getCurrentUser();
+        if (funcionarioId === currentUser.id) {
+            showNotification('Você não pode excluir a si mesmo.', 'error');
+            return false;
+        }
         
-        saveDb();
-        document.getElementById('modal-editar-funcionario').style.display = 'none';
-        showFuncionarioDetails(window.currentFuncionarioId);
-        renderFuncionarioList(); // Re-render the list to reflect changes (e.g., if roles change)
-        showNotification('Dados do funcionário atualizados com sucesso!', 'success');
+        // Busca o funcionário no Supabase para obter o nome antes de excluir
+        const { data: funcionarioToDelete, error: fetchError } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', funcionarioId)
+            .single();
+            
+        if (fetchError) throw fetchError;
+        if (!funcionarioToDelete) {
+            showNotification('Funcionário não encontrado.', 'error');
+            return false;
+        }
+        
+        const funcionarioName = funcionarioToDelete.name;
+        
+        // Exclui o usuário do Supabase
+        const { error: deleteError } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', funcionarioId);
+            
+        if (deleteError) throw deleteError;
+        
+        // Fecha o modal de detalhes se estiver aberto
+        const modalDetalhes = document.getElementById('modal-detalhes-funcionario');
+        if (modalDetalhes) {
+            modalDetalhes.style.display = 'none';
+        }
+        
+        // Atualiza a lista de funcionários
+        renderFuncionarioList();
+        showNotification(`Funcionário "${funcionarioName}" excluído com sucesso!`, 'success');
         updateGlobalSearchDatalist();
-    } else {
-        showNotification('Nenhuma alteração foi feita.', 'info');
-        document.getElementById('modal-editar-funcionario').style.display = 'none';
-        showFuncionarioDetails(window.currentFuncionarioId);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Erro ao excluir funcionário:', error);
+        showNotification('Erro ao excluir funcionário. Por favor, tente novamente.', 'error');
+        return false;
     }
 }
 
-export function deleteFuncionario(funcionarioId) {
-    // Check if the current user has edit access to the 'funcionarios' tab and is a director
-    if (!checkTabAccess('funcionarios', 'edit') || !isRoleAllowed(DIRECTOR_ONLY)) {
-        showNotification('Você não tem permissão para excluir funcionários.', 'error');
-        return;
-    }
-    
-    const funcionarioToDelete = db.users.find(u => u.id === funcionarioId);
-    if (!funcionarioToDelete) {
-        showNotification('Funcionário não encontrado.', 'error');
-        return;
-    }
+import { supabase } from './supabaseClient.js';
 
-    const currentUser = getCurrentUser();
-    if (funcionarioId === currentUser.id) {
-        showNotification('Você não pode excluir a si mesmo.', 'error');
-        return;
-    }
-
-    const funcionarioName = funcionarioToDelete.name;
-
-    db.users = db.users.filter(u => u.id !== funcionarioId);
-
-    db.schedules.forEach(schedule => {
-        if (schedule.assignedToUserId === funcionarioId) {
-            schedule.assignedToUserId = null;
-            schedule.assignedToUserName = 'Profissional Removido'; 
+export async function addFuncionario(funcionarioData) {
+    try {
+        // Verifica se o usuário tem permissão para adicionar funcionários
+        if (!checkTabAccess('funcionarios', 'edit')) {
+            showNotification('Você não tem permissão para adicionar funcionários.', 'error');
+            return false;
         }
-    });
 
-    db.clients.forEach(client => {
-        // NEW: Handle multiple assigned professionals
-        if (client.assignedProfessionalIds && client.assignedProfessionalIds.includes(funcionarioId)) {
-            const oldAssignedNames = client.assignedProfessionalIds.map(id => db.users.find(u => u.id === id)?.name || 'Desconhecido').join(', ');
-            client.assignedProfessionalIds = client.assignedProfessionalIds.filter(id => id !== funcionarioId);
-            const newAssignedNames = client.assignedProfessionalIds.map(id => db.users.find(u => u.id === id)?.name || 'Desconhecido').join(', ');
+        // Verifica se o email já está cadastrado
+        const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', funcionarioData.email)
+            .single();
 
-            if (!client.changeHistory) client.changeHistory = [];
-            client.changeHistory.push({
-                id: db.nextChangeId++,
-                date: new Date().toISOString(),
-                changedBy: getCurrentUser().name,
-                changes: [{ field: 'Profissional Vinculado', oldValue: oldAssignedNames, newValue: newAssignedNames || 'Nenhum (Funcionário excluído)' }]
-            });
+        if (existingUser) {
+            showNotification('Este email já está cadastrado. Por favor, utilize outro email.', 'error');
+            return false;
         }
-    });
 
-    saveDb();
-    document.getElementById('modal-detalhes-funcionario').style.display = 'none';
-    renderFuncionarioList();
-    showNotification(`Funcionário "${funcionarioName}" excluído com sucesso!`, 'success');
-    updateGlobalSearchDatalist();
-}
+        // Prepara os dados do usuário para o Supabase
+        const { data, error } = await supabase
+            .from('users')
+            .insert([
+                {
+                    name: funcionarioData.name,
+                    email: funcionarioData.email,
+                    password: funcionarioData.password, // Em produção, use hash de senha
+                    role: funcionarioData.role || 'staff',
+                    cpf: funcionarioData.cpf || null,
+                    phone: funcionarioData.phone || null,
+                    address: funcionarioData.address || null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ])
+            .select();
 
-export function addFuncionario(funcionarioData) {
-    // Check if the current user has edit access to the 'funcionarios' tab
-    if (!checkTabAccess('funcionarios', 'edit')) {
-        showNotification('Você não tem permissão para adicionar funcionários.', 'error');
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            showNotification(`Funcionário "${funcionarioData.name}" cadastrado com sucesso!`, 'success');
+            return true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Erro ao cadastrar funcionário:', error);
+        showNotification('Erro ao cadastrar funcionário. Por favor, tente novamente.', 'error');
         return false;
     }
-
-    if (db.users.some(u => u.username === funcionarioData.username)) {
-        showNotification('Nome de usuário já existe. Por favor, escolha outro.', 'error');
-        return false;
-    }
-
-    // Block registration of duplicate CPF for employees
-    if (funcionarioData.cpf && db.users.some(u => u.cpf && u.cpf === funcionarioData.cpf)) {
-        showNotification('Já existe um funcionário cadastrado com este CPF.', 'error');
-        return false;
-    }
-    
-    const newUser = {
-        id: db.nextUserId++,
-        ...funcionarioData,
-        academicInfo: funcionarioData.academicInfo || {}, // Ensure academicInfo is an object
-        tabAccess: funcionarioData.tabAccess === undefined ? null : funcionarioData.tabAccess, // Ensure tabAccess is null if not provided
-        changeHistory: []
-    };
-    
-    db.users.push(newUser);
-    saveDb();
-    showNotification(`Funcionário "${funcionarioData.name}" cadastrado com sucesso!`, 'success');
-    return true;
 }
 
 // Function to populate tab permissions dropdowns (used in add and edit modals, and permissions grid)
