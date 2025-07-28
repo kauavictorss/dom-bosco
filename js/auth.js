@@ -10,34 +10,8 @@ import {
     onAuthStateChange,
     signIn as supabaseSignIn,
     signOut as supabaseSignOut,
-    hasRole as supabaseHasRole,
-    DIRECTOR_ONLY,
-    FINANCE_ONLY,
-    DIRECTOR_OR_FINANCE,
-    STOCK_MANAGERS,
-    COORDINATOR_AND_HIGHER,
-    ALL_USERS,
-    PROFESSIONAL_ROLES,
-    NON_FINANCE_ACCESS,
-    ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES,
-    DIRECTOR_AND_PROFESSIONALS,
-    DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS
+    hasRole as supabaseHasRole
 } from './supabase.js';
-
-// Exporta as constantes de controle de acesso para uso em outros módulos
-export {
-    DIRECTOR_ONLY,
-    FINANCE_ONLY,
-    DIRECTOR_OR_FINANCE,
-    STOCK_MANAGERS,
-    COORDINATOR_AND_HIGHER,
-    ALL_USERS,
-    PROFESSIONAL_ROLES,
-    NON_FINANCE_ACCESS,
-    ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES,
-    DIRECTOR_AND_PROFESSIONALS,
-    DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS
-};
 
 // Estado global do usuario autenticado
 export let currentUser = null;
@@ -455,15 +429,8 @@ export const ALL_USERS = ['director', 'coordinator_madre', 'coordinator_floresta
 // Inicializa a autenticação quando o módulo for carregado
 initAuth();
 
-// Exporta as constantes de controle de acesso para uso em outros módulos
+// Exporta as funções auxiliares para uso em outros módulos
 export {
-    NON_FINANCE_ACCESS,
-    PROFESSIONAL_ROLES,
-    ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES,
-    DIRECTOR_AND_PROFESSIONALS,
-    DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS,
-    ALL_USERS,
-    // Exportando funções auxiliares
     hasAnyRole,
     hasFinanceAccess,
     isAdmin,
