@@ -10,8 +10,24 @@ import {
     onAuthStateChange,
     signIn as supabaseSignIn,
     signOut as supabaseSignOut,
-    hasRole as supabaseHasRole
 } from './supabase.js';
+
+import {
+    PROFESSIONAL_ROLES,
+    DIRECTOR_ONLY,
+    FINANCE_ONLY,
+    DIRECTOR_OR_FINANCE,
+    STOCK_MANAGERS,
+    COORDINATOR_AND_HIGHER,
+    ALL_USERS,
+    NON_FINANCE_ACCESS,
+    DIRECTOR_AND_PROFESSIONALS,
+    ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES,
+    SCHEDULE_MANAGERS,
+    DOCUMENT_MANAGERS,
+    ALL_SCHEDULE_VIEW_EDIT_MANAGERS,
+    DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS
+} from './roles.js';
 
 // Estado global do usuario autenticado
 export let currentUser = null;
@@ -382,49 +398,8 @@ export const isCoordinatorOrHigher = (user) => {
 
 // Função para verificar se o usuario é um profissional
 export const isProfessional = (user) => {
-    return hasAnyRole(user, ['musictherapist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist']);
+    return hasAnyRole(user, PROFESSIONAL_ROLES);
 };
-// Definição de constantes de funções para uso em todo o sistema
-export const PROFESSIONAL_ROLES = [
-    'staff', 'intern', 'musictherapist', 'receptionist',
-    'psychologist', 'psychopedagogue', 'speech_therapist',
-    'nutritionist', 'physiotherapist'
-];
-
-// Definição de constantes para controle de acesso
-export const DIRECTOR_ONLY = ['director'];
-export const FINANCE_ONLY = ['financeiro'];
-export const DIRECTOR_OR_FINANCE = ['director', 'financeiro'];
-export const STOCK_MANAGERS = ['director', 'financeiro', 'staff'];
-export const COORDINATOR_AND_HIGHER = ['director', 'coordinator_madre', 'coordinator_floresta'];
-export const ALL_USERS = ['*'];
-
-// Grupos de funções para controle de acesso específico
-export const NON_FINANCE_ACCESS = [
-    'director', 'coordinator_madre', 'coordinator_floresta', 'staff',
-    'intern', 'musictherapist', 'receptionist', 'psychologist',
-    'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'
-];
-
-export const DIRECTOR_AND_PROFESSIONALS = ['director', ...PROFESSIONAL_ROLES];
-export const ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES = [
-    'director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'
-];
-
-// Funções que podem ser visualizadas e gerenciadas todos os agendamentos
-export const SCHEDULE_MANAGERS = [
-    'director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'
-];
-
-// Funções que podem ser visualizadas e gerenciadas documentos
-export const DOCUMENT_MANAGERS = [
-    'director', 'coordinator_madre', 'coordinator_floresta', 'professional'
-];
-export const ALL_SCHEDULE_VIEW_EDIT_MANAGERS = ['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'];
-// NEW: Roles that can add/edit/delete general documents and meetings (Director and Coordinators only)
-export const DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS = ['director', 'coordinator_madre', 'coordinator_floresta'];
-// NEW: All users, for tab visibility (e.g. general view for "Mural do Coordenador")
-export const ALL_USERS = ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'musictherapist', 'financeiro', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'];
 
 // Inicializa a autenticação quando o módulo for carregado
 initAuth();
