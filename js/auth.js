@@ -10,7 +10,7 @@ import {
     onAuthStateChange,
     signIn as supabaseSignIn,
     signOut as supabaseSignOut,
-} from './supabase.js';
+} from '@supabase/supabase-js';
 
 import {
     PROFESSIONAL_ROLES,
