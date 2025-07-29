@@ -3,7 +3,7 @@
  * Gerencia o estado de autenticação do usuario e controle de acesso baseado em funções
  */
 
-import {supabase} from './supabase.js'; // Correct import for the client
+import {getUserFuncionario, supabase} from './supabase.js'; // Correct import for the client
 import {showNotification} from './ui.js';
 import {db, saveDb} from './database.js';
 
@@ -94,11 +94,51 @@ export const login = async (email, password) => {
         }
 
         console.log('Usuário autenticado, buscando perfil do funcionário...');
-        const funcionario = await getUserFuncionario(data.user.id);
+        console.log('ID do usuário no Supabase Auth:', data.user.id);
+        console.log('Email do usuário:', data.user.email);
+        
+        // Primeiro tenta buscar pelo ID do usuário
+        let funcionario = await getUserFuncionario(data.user.id);
+        
+        // Se não encontrar, tenta buscar pelo email
+        if (!funcionario) {
+            console.log('Perfil não encontrado pelo ID, tentando buscar pelo email...');
+            const { data: funcionarioData, error: funcError } = await supabase
+                .from('funcionarios')
+                .select('*')
+                .eq('email', data.user.email)
+                .single();
+                
+            if (funcError) {
+                console.error('Erro ao buscar funcionário por email:', funcError);
+            } else if (funcionarioData) {
+                console.log('Perfil encontrado pelo email:', funcionarioData);
+                funcionario = funcionarioData;
+                
+                // Atualiza o ID do funcionário para corresponder ao ID do Supabase Auth
+                const { error: updateError } = await supabase
+                    .from('funcionarios')
+                    .update({ id: data.user.id })
+                    .eq('id', funcionario.id);
+                    
+                if (updateError) {
+                    console.error('Erro ao atualizar ID do funcionário:', updateError);
+                } else {
+                    console.log('ID do funcionário atualizado com sucesso');
+                }
+            }
+        }
+        
         console.log('Perfil do funcionário encontrado:', funcionario);
 
         if (!funcionario) {
-            console.error('Perfil não encontrado para o usuário:', data.user.id);
+            console.error('Perfil não encontrado para o usuário:', data.user.id, 'ou email:', data.user.email);
+            console.log('Listando todos os funcionários disponíveis:');
+            const { data: allFuncionarios } = await supabase
+                .from('funcionarios')
+                .select('id, email, nome, role');
+            console.log('Funcionários na tabela:', allFuncionarios);
+            
             throw new Error('Perfil de usuário não encontrado. Acesso negado.');
         }
 
