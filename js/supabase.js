@@ -3,42 +3,25 @@ import {createClient} from '@supabase/supabase-js';
 
 // Configuração do cliente Supabase
 console.log('Inicializando cliente Supabase...');
-console.log('Process.env:', JSON.stringify(import.meta.env, null, 2));
 
-// Usar let para permitir reatribuição se necessário
-let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-let supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Usar as variáveis de ambiente do Vite
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Verifica se as variáveis de ambiente estão definidas
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Erro: Variáveis de ambiente do Supabase não encontradas!');
-    console.log('VITE_SUPABASE_URL:', supabaseUrl ? 'Definido' : 'Não definido');
-    console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Definido' : 'Não definido');
+    const errorMsg = 'Erro: Variáveis de ambiente do Supabase não encontradas!\n' +
+                   'Certifique-se de que as seguintes variáveis estão definidas no arquivo .env:\n' +
+                   'VITE_SUPABASE_URL=seu_url_do_supabase\n' +
+                   'VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase';
     
-    // Tenta carregar as variáveis de forma alternativa
-    console.log('Tentando carregar variáveis de ambiente alternativamente...');
-    try {
-        const envModule = await import('../../.env');
-        console.log('Módulo .env carregado:', envModule);
-        
-        if (envModule && (envModule.VITE_SUPABASE_URL || envModule.VITE_SUPABASE_ANON_KEY)) {
-            console.log('Variáveis de ambiente carregadas do módulo .env');
-            if (envModule.VITE_SUPABASE_URL) supabaseUrl = envModule.VITE_SUPABASE_URL;
-            if (envModule.VITE_SUPABASE_ANON_KEY) supabaseAnonKey = envModule.VITE_SUPABASE_ANON_KEY;
-        }
-    } catch (error) {
-        console.error('Erro ao carregar módulo .env:', error);
-    }
-    
-    // Verifica novamente após tentar carregar alternativamente
-    if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Não foi possível carregar as variáveis de ambiente necessárias para o Supabase.');
-    }
-} else {
-    console.log('Variáveis de ambiente do Supabase encontradas!');
-    console.log('URL do Supabase:', supabaseUrl);
-    console.log('Chave Anônima do Supabase:', supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'Não definida');
+    console.error(errorMsg);
+    throw new Error(errorMsg);
 }
+
+console.log('Variáveis de ambiente do Supabase encontradas!');
+console.log('URL do Supabase:', supabaseUrl);
+console.log('Chave Anônima do Supabase:', supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'Não definida');
 
 console.log('Criando instância do cliente Supabase...');
 // Cria e exporta a instância do cliente Supabase
