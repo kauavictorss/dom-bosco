@@ -1,5 +1,6 @@
 // Login functionality with Supabase
-import { login, onAuthStateChange } from '../../../Downloads/Downloads/funda__o_dom_bosco/js/auth.js';
+import { login, onAuthStateChange } from './auth.js';
+import { supabase } from './supabase.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('form-login');
@@ -53,11 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (email) {
                 try {
-                    // TODO: Implement password reset with Supabase
-                    alert('Um email foi enviado com instruções para redefinir sua senha.');
+                    // Envia email de redefinição de senha usando o Supabase
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin + '/update-password.html' // Página para redefinir a senha
+                    });
+                    
+                    if (error) throw error;
+                    
+                    alert('Um email foi enviado com instruções para redefinir sua senha. Verifique sua caixa de entrada.');
                 } catch (error) {
-                    console.error('Password reset error:', error);
-                    alert('Ocorreu um erro ao solicitar a redefinição de senha. Tente novamente.');
+                    console.error('Erro ao redefinir senha:', error);
+                    alert('Ocorreu um erro ao solicitar a redefinição de senha. Verifique se o email está correto e tente novamente.');
                 }
             }
         });
@@ -69,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up auth state change listener
     onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
-            // Redirect to dashboard or home page after successful login
-            window.location.href = '/dashboard.html'; // Update this to your actual dashboard URL
+            // Redirect to home page after successful login
+            window.location.href = '/index.html';
         }
     });
     
@@ -99,16 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function checkAuthState() {
         try {
-            const response = await fetch('/api/auth/session', {
-                credentials: 'include'
-            });
+            const { data: { session }, error } = await supabase.auth.getSession();
             
-            if (response.ok) {
-                const data = await response.json();
-                if (data.user) {
-                    // User is already logged in, redirect to dashboard
-                    window.location.href = '/dashboard.html'; // Update this to your actual dashboard URL
-                }
+            if (session) {
+                // User is already logged in, redirect to home page
+                window.location.href = '/index.html';
             }
         } catch (error) {
             console.error('Error checking auth state:', error);

@@ -478,9 +478,15 @@ export const signUp = async (email, password, funcionarioData = {}) => {
     }
 };
 
+// Função para se inscrever nas mudanças de estado de autenticação
+export const onAuthStateChange = (callback) => {
+    return supabase.auth.onAuthStateChange(callback);
+};
+
 // Exporta as funções auxiliares para uso em outros módulos
 export {
     hasAnyRole,
+    onAuthStateChange,
 };
 
 // Função para obter o perfil do usuário
