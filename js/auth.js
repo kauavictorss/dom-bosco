@@ -3,9 +3,9 @@
  * Gerencia o estado de autenticação do usuario e controle de acesso baseado em funções
  */
 
-import { supabase } from './supabase.js'; // Correct import for the client
-import { showNotification } from './ui.js';
-import { db, saveDb } from './database.js';
+import {supabase} from './supabase.js'; // Correct import for the client
+import {showNotification} from './ui.js';
+import {db, saveDb} from './database.js';
 
 import {
     PROFESSIONAL_ROLES,
@@ -29,7 +29,7 @@ export const initAuth = () => {
     }
 
     // Configura o listener de mudanças de estado de autenticação
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {data} = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('Evento de autenticação:', event, session);
 
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
@@ -76,7 +76,7 @@ export const login = async (email, password) => {
         }
 
         // Tenta fazer login usando o Supabase
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const {data, error} = await supabase.auth.signInWithPassword({email, password});
 
         if (error) throw error;
 
@@ -115,7 +115,7 @@ export const login = async (email, password) => {
 export const logout = async () => {
     try {
         // Faz logout no Supabase
-        const { error } = await supabase.auth.signOut();
+        const {error} = await supabase.auth.signOut();
 
         if (error) throw error;
 
@@ -151,7 +151,7 @@ export const checkLogin = async () => {
         }
 
         // Se não há usuario armazenado, verifica se há uma sessão ativa no Supabase
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {data: {session}, error} = await supabase.auth.getSession();
 
         if (error) {
             console.error('Erro ao verificar sessão:', error);
@@ -160,7 +160,7 @@ export const checkLogin = async () => {
 
         if (session?.user) {
             // Se há uma sessão ativa, busca os dados completos do usuario
-            const { data: { user } } = await supabase.auth.getUser();
+            const {data: {user}} = await supabase.auth.getUser();
 
             if (!user) {
                 return {isAuthenticated: false};
@@ -172,7 +172,7 @@ export const checkLogin = async () => {
                 console.error('Perfil não encontrado para o usuário:', user.id);
                 // Se não há perfil, a sessão pode ser inválida, então limpamos.
                 await logout();
-                return { isAuthenticated: false };
+                return {isAuthenticated: false};
             }
 
             // Atualiza o usuario atual
@@ -279,15 +279,27 @@ export const checkTabAccess = (tabId, requiredAccess = 'view', user = null) => {
 
     // 3. Fallback para permissões padrão baseadas no cargo (role)
     const defaultTabPermissions = {
-        'cadastro': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator', 'receptionist'] },
-        'agenda': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator', 'professional', 'receptionist'] },
-        'historico': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator'] },
-        'meus-pacientes': { view: PROFESSIONAL_ROLES, edit: PROFESSIONAL_ROLES },
-        'relatorios': { view: ['director', 'financeiro', 'coordinator'], edit: ['director'] },
-        'financeiro': { view: ['director', 'financeiro'], edit: ['director', 'financeiro'] },
-        'estoque': { view: ['director', 'financeiro', 'staff', 'coordinator'], edit: ['director', 'financeiro', 'coordinator'] },
-        'funcionarios': { view: ['director', 'coordinator'], edit: ['director'] },
-        'documentos': { view: ['director', 'coordinator'], edit: ['director', 'coordinator'] }
+        'cadastro': {
+            view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'],
+            edit: ['director', 'coordinator', 'receptionist']
+        },
+        'agenda': {
+            view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'],
+            edit: ['director', 'coordinator', 'professional', 'receptionist']
+        },
+        'historico': {
+            view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'],
+            edit: ['director', 'coordinator']
+        },
+        'meus-pacientes': {view: PROFESSIONAL_ROLES, edit: PROFESSIONAL_ROLES},
+        'relatorios': {view: ['director', 'financeiro', 'coordinator'], edit: ['director']},
+        'financeiro': {view: ['director', 'financeiro'], edit: ['director', 'financeiro']},
+        'estoque': {
+            view: ['director', 'financeiro', 'staff', 'coordinator'],
+            edit: ['director', 'financeiro', 'coordinator']
+        },
+        'funcionarios': {view: ['director', 'coordinator'], edit: ['director']},
+        'documentos': {view: ['director', 'coordinator'], edit: ['director', 'coordinator']}
     };
 
     if (!defaultTabPermissions[tabId]) {
@@ -408,7 +420,7 @@ export const signUp = async (email, password, funcionarioData = {}) => {
         }
 
         // 1. Cria o usuário no sistema de autenticação
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        const {data: authData, error: signUpError} = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -422,7 +434,7 @@ export const signUp = async (email, password, funcionarioData = {}) => {
         if (!authData.user) throw new Error('Falha ao criar usuário');
 
         // 2. Cria o perfil do usuário na tabela funcionarios
-        const { data: funcionario, error: funcionarioError } = await supabase
+        const {data: funcionario, error: funcionarioError} = await supabase
             .from('funcionarios')
             .insert([
                 {
@@ -473,7 +485,7 @@ export {
 
 // Função para obter o perfil do usuário
 async function getUserFuncionario(userId) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('funcionarios')
         .select('*')
         .eq('id', userId)

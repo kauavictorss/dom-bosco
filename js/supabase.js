@@ -1,5 +1,5 @@
 // Configuração e autenticação do Supabase
-import { createClient } from '@supabase/supabase-js';
+import {createClient} from '@supabase/supabase-js';
 
 // Configuração do cliente Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -31,19 +31,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  */
 export const signIn = async (email, password) => {
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const {data, error} = await supabase.auth.signInWithPassword({
             email,
             password,
         });
-        
+
         if (error) throw error;
-        
+
         // Busca o perfil do usuario após o login
         const userFuncionario = await getUserFuncionario(data.user.id);
-        
-        return { 
-            user: { ...data.user, ...userFuncionario },
-            session: data.session 
+
+        return {
+            user: {...data.user, ...userFuncionario},
+            session: data.session
         };
     } catch (error) {
         console.error('Erro ao fazer login:', error.message);
@@ -57,9 +57,9 @@ export const signIn = async (email, password) => {
  */
 export const signOut = async () => {
     try {
-        const { error } = await supabase.auth.signOut();
+        const {error} = await supabase.auth.signOut();
         if (error) throw error;
-        
+
         // Limpa os dados do usuario do localStorage
         localStorage.removeItem('currentUser');
         console.log('Logout realizado com sucesso');
@@ -75,7 +75,7 @@ export const signOut = async () => {
  */
 export const getCurrentSession = async () => {
     try {
-        const { data, error } = await supabase.auth.getSession();
+        const {data, error} = await supabase.auth.getSession();
         if (error) throw error;
         return data.session;
     } catch (error) {
@@ -90,15 +90,15 @@ export const getCurrentSession = async () => {
  */
 export const getCurrentUser = async () => {
     try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const {data: {user}, error} = await supabase.auth.getUser();
         if (error) throw error;
-        
+
         if (user) {
             // Busca o perfil do usuario
             const userFuncionario = await getUserFuncionario(user.id);
-            return { ...user, ...userFuncionario };
+            return {...user, ...userFuncionario};
         }
-        
+
         return null;
     } catch (error) {
         console.error('Erro ao obter usuario:', error.message);
@@ -113,12 +113,12 @@ export const getCurrentUser = async () => {
  */
 export const getUserFuncionario = async (userId) => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('users')
             .select('*')
             .eq('id', userId)
             .single();
-            
+
         if (error) throw error;
         return data || {};
     } catch (error) {
@@ -150,7 +150,7 @@ export const hasRole = (user, roles) => {
  */
 export const checkTabAccess = (user, tabId, requiredAccess = 'view') => {
     if (!user) return false;
-    
+
     // Mapeamento de permissões para cada aba
     const tabPermissions = {
         'tab-cadastro': {
@@ -185,13 +185,13 @@ export const checkTabAccess = (user, tabId, requiredAccess = 'view') => {
 
     // Verifica se a aba existe no mapeamento
     if (!tabPermissions[tabId]) return false;
-    
+
     // Obtém as permissões necessárias para o nível de acesso solicitado
     const requiredRoles = tabPermissions[tabId][requiredAccess] || [];
-    
+
     // Se o usuario for administrador, tem acesso a tudo
     if (user.role === 'director') return true;
-    
+
     // Verifica se o usuario tem alguma das funções necessárias
     return requiredRoles.includes(user.role);
 };
@@ -216,13 +216,13 @@ export const onAuthStateChange = (callback) => {
  */
 export const updateUserFuncionario = async (userId, updates) => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('users')
             .update(updates)
             .eq('id', userId)
             .select()
             .single();
-            
+
         if (error) throw error;
         return data;
     } catch (error) {
@@ -241,10 +241,10 @@ export const updateUserFuncionario = async (userId, updates) => {
  */
 export const getAllUsers = async () => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('users')
             .select('*');
-            
+
         if (error) throw error;
         return data || [];
     } catch (error) {
@@ -263,10 +263,10 @@ export const getAllUsers = async () => {
  */
 export const getTodos = async () => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('todos')
             .select('*');
-            
+
         if (error) throw error;
         return data || [];
     } catch (error) {
@@ -282,16 +282,16 @@ export const getTodos = async () => {
  */
 export const addTodo = async (todo) => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('todos')
             .insert([
-                { 
+                {
                     title: todo.title,
                     completed: false,
                     created_at: new Date().toISOString()
                 }
             ]);
-            
+
         if (error) throw error;
         return data;
     } catch (error) {
@@ -308,11 +308,11 @@ export const addTodo = async (todo) => {
  */
 export const updateTodo = async (id, updates) => {
     try {
-        const { data, error } = await supabase
+        const {data, error} = await supabase
             .from('todos')
             .update(updates)
             .eq('id', id);
-            
+
         if (error) throw error;
         return data;
     } catch (error) {
@@ -328,11 +328,11 @@ export const updateTodo = async (id, updates) => {
  */
 export const deleteTodo = async (id) => {
     try {
-        const { error } = await supabase
+        const {error} = await supabase
             .from('todos')
             .delete()
             .eq('id', id);
-            
+
         if (error) throw error;
         return true;
     } catch (error) {
