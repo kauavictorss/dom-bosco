@@ -30,12 +30,23 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoading(true);
             
             try {
-                const success = await login(email, password);
-                if (success) {
+                console.log('Iniciando processo de login...');
+                console.log('Email fornecido:', email);
+                console.log('Senha fornecida:', password ? '***' : 'vazia');
+                
+                const result = await login(email, password);
+                console.log('Resultado do login:', result);
+                
+                if (result && result.success) {
                     // Login successful, the auth state change will handle the redirect
-                    console.log('Login successful');
+                    console.log('Login bem-sucedido, redirecionando...');
+                    // Força o redirecionamento para a página principal
+                    window.location.href = '/index.html';
                 } else {
-                    showError('Email ou senha inválidos. Tente novamente.');
+                    const errorMessage = result && result.error 
+                        ? result.error 
+                        : 'Email ou senha inválidos. Tente novamente.';
+                    showError(errorMessage);
                 }
             } catch (error) {
                 console.error('Login error:', error);

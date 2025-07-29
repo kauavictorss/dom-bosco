@@ -70,17 +70,32 @@ export const initAuth = () => {
  */
 export const login = async (email, password) => {
     try {
+        console.log('Tentativa de login para o email:', email);
+        
         // Validação dos parâmetros
         if (!email || !password) {
+            console.error('Email ou senha não fornecidos');
             throw new Error('Email e senha são obrigatórios');
         }
 
+        console.log('Iniciando autenticação com Supabase...');
         // Tenta fazer login usando o Supabase
         const {data, error} = await supabase.auth.signInWithPassword({email, password});
+        console.log('Resposta do Supabase:', { data, error });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Erro do Supabase:', error);
+            throw error;
+        }
 
+        if (!data || !data.user) {
+            console.error('Nenhum usuário retornado pelo Supabase');
+            throw new Error('Falha ao autenticar. Tente novamente.');
+        }
+
+        console.log('Usuário autenticado, buscando perfil do funcionário...');
         const funcionario = await getUserFuncionario(data.user.id);
+        console.log('Perfil do funcionário encontrado:', funcionario);
 
         if (!funcionario) {
             console.error('Perfil não encontrado para o usuário:', data.user.id);
@@ -94,8 +109,11 @@ export const login = async (email, password) => {
             role: funcionario.role || 'staff' // Prioriza o cargo do perfil
         };
 
+        console.log('Usuário atual definido:', currentUser);
+        
         // Armazena os dados do usuario no localStorage para persistência
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        console.log('Usuário salvo no localStorage');
 
         return {success: true, user: currentUser};
 
@@ -488,17 +506,4 @@ export {
     hasAnyRole
 };
 
-// Função para obter o perfil do usuário
-async function getUserFuncionario(userId) {
-    const {data, error} = await supabase
-        .from('funcionarios')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-    if (error) {
-        console.error('Erro ao buscar perfil:', error);
-        return null; // Retorna null em caso de erro para ser tratado
-    }
-    return data;
-}
+// A função getUserFuncionario foi movida para supabase.js para centralizar as chamadas ao banco de dados

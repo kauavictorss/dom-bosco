@@ -112,18 +112,29 @@ export const getCurrentUser = async () => {
  * @returns {Promise<Object>} Perfil do usuario
  */
 export const getUserFuncionario = async (userId) => {
+    console.log(`Buscando perfil do funcionário para o ID: ${userId} na tabela 'funcionarios'`);
     try {
         const {data, error} = await supabase
-            .from('users')
+            .from('funcionarios')
             .select('*')
             .eq('id', userId)
             .single();
 
-        if (error) throw error;
-        return data || {};
+        if (error) {
+            console.error('Erro ao buscar perfil do funcionário:', error);
+            return null;
+        }
+
+        if (!data) {
+            console.error('Nenhum perfil encontrado para o ID:', userId);
+            return null;
+        }
+
+        console.log('Perfil do funcionário encontrado:', data);
+        return data;
     } catch (error) {
-        console.error('Erro ao obter perfil do usuario:', error.message);
-        return {};
+        console.error('Exceção ao buscar perfil do funcionário:', error);
+        return null;
     }
 };
 
