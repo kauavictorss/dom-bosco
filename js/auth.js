@@ -238,59 +238,47 @@ export const isRoleAllowed = (allowedRoles) => {
  * @returns {boolean} Verdadeiro se o usuario tiver permissão
  */
 export const checkTabAccess = (tabId, requiredAccess = 'view', user = null) => {
-    // Se não foi passado um usuario, tenta obter o usuario atual
     if (!user) {
         user = getCurrentUser();
     }
 
-    // Se ainda não tem usuario, não tem acesso
     if (!user) return false;
 
-    // Se for administrador, tem acesso a tudo
+    // 1. Acesso de Diretor (acesso total)
     if (user.role === 'director') return true;
 
-    // Mapeamento de permissões para cada aba
-    const tabPermissions = {
-        'cadastro': {
-            view: ['director', 'coordinator', 'professional', 'staff'],
-            edit: ['director', 'coordinator', 'professional']
-        },
-        'agenda': {
-            view: ['director', 'coordinator', 'professional', 'staff'],
-            edit: ['director', 'coordinator', 'professional']
-        },
-        'historico': {
-            view: ['director', 'coordinator', 'professional', 'staff'],
-            edit: ['director', 'coordinator', 'professional']
-        },
-        'relatorios': {
-            view: ['director', 'financeiro'],
-            edit: ['director']
-        },
-        'financeiro': {
-            view: ['director', 'financeiro'],
-            edit: ['director', 'financeiro']
-        },
-        'estoque': {
-            view: ['director', 'financeiro', 'staff'],
-            edit: ['director', 'financeiro']
-        },
-        'funcionarios': {
-            view: ['director', 'coordinator'],
-            edit: ['director']
+    // 2. Verificar permissões personalizadas do usuário
+    if (user.tabAccess && user.tabAccess[tabId]) {
+        const userAccessLevel = user.tabAccess[tabId];
+        if (requiredAccess === 'view') {
+            // Se o usuário tem permissão de 'view' ou 'edit', ele pode visualizar.
+            return userAccessLevel === 'view' || userAccessLevel === 'edit';
         }
+        if (requiredAccess === 'edit') {
+            // Apenas a permissão 'edit' concede acesso de edição.
+            return userAccessLevel === 'edit';
+        }
+    }
+
+    // 3. Fallback para permissões padrão baseadas no cargo (role)
+    const defaultTabPermissions = {
+        'cadastro': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator', 'receptionist'] },
+        'agenda': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator', 'professional', 'receptionist'] },
+        'historico': { view: ['director', 'coordinator', 'professional', 'staff', 'receptionist'], edit: ['director', 'coordinator'] },
+        'meus-pacientes': { view: PROFESSIONAL_ROLES, edit: PROFESSIONAL_ROLES },
+        'relatorios': { view: ['director', 'financeiro', 'coordinator'], edit: ['director'] },
+        'financeiro': { view: ['director', 'financeiro'], edit: ['director', 'financeiro'] },
+        'estoque': { view: ['director', 'financeiro', 'staff', 'coordinator'], edit: ['director', 'financeiro', 'coordinator'] },
+        'funcionarios': { view: ['director', 'coordinator'], edit: ['director'] },
+        'documentos': { view: ['director', 'coordinator'], edit: ['director', 'coordinator'] }
     };
 
-    // Verifica se a aba existe no mapeamento
-    if (!tabPermissions[tabId]) {
-        console.warn(`Aba '${tabId}' não encontrada no mapeamento de permissões`);
+    if (!defaultTabPermissions[tabId]) {
+        console.warn(`Aba '${tabId}' não encontrada no mapeamento de permissões padrão.`);
         return false;
     }
 
-    // Obtém as permissões necessárias para o nível de acesso solicitado
-    const requiredRoles = tabPermissions[tabId][requiredAccess] || [];
-
-    // Verifica se o usuario tem alguma das funções necessárias
+    const requiredRoles = defaultTabPermissions[tabId][requiredAccess] || [];
     return requiredRoles.includes(user.role);
 };
 
