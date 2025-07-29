@@ -35,8 +35,8 @@ export const initAuth = () => {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             // Usuário fez login ou a sessão foi restaurada
             if (session?.user) {
-                const profile = await getUserProfile(session.user.id);
-                if (!profile) {
+                const funcionario = await getUserFuncionario(session.user.id);
+                if (!funcionario) {
                     console.error('Perfil não encontrado para o usuário:', session.user.id);
                     // Deslogar o usuário se o perfil não existe para evitar estado inconsistente
                     await logout();
@@ -45,8 +45,8 @@ export const initAuth = () => {
 
                 currentUser = {
                     ...session.user,
-                    ...profile,
-                    role: profile.role || 'staff' // Prioriza o perfil, fallback para 'staff'
+                    ...funcionario,
+                    role: funcionario.role || 'staff' // Prioriza o perfil, fallback para 'staff'
                 };
                 // Armazena os dados do usuario no localStorage para persistência
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -80,9 +80,9 @@ export const login = async (email, password) => {
 
         if (error) throw error;
 
-        const profile = await getUserProfile(data.user.id);
+        const funcionario = await getUserFuncionario(data.user.id);
 
-        if (!profile) {
+        if (!funcionario) {
             console.error('Perfil não encontrado para o usuário:', data.user.id);
             throw new Error('Perfil de usuário não encontrado. Acesso negado.');
         }
@@ -90,8 +90,8 @@ export const login = async (email, password) => {
         // Atualiza o usuario atual com os dados do perfil
         currentUser = {
             ...data.user,
-            ...profile,
-            role: profile.role || 'staff' // Prioriza o cargo do perfil
+            ...funcionario,
+            role: funcionario.role || 'staff' // Prioriza o cargo do perfil
         };
 
         // Armazena os dados do usuario no localStorage para persistência
@@ -166,9 +166,9 @@ export const checkLogin = async () => {
                 return {isAuthenticated: false};
             }
 
-            const profile = await getUserProfile(user.id);
+            const funcionario = await getUserFuncionario(user.id);
 
-            if (!profile) {
+            if (!funcionario) {
                 console.error('Perfil não encontrado para o usuário:', user.id);
                 // Se não há perfil, a sessão pode ser inválida, então limpamos.
                 await logout();
@@ -178,8 +178,8 @@ export const checkLogin = async () => {
             // Atualiza o usuario atual
             currentUser = {
                 ...user,
-                ...profile,
-                role: profile.role || 'staff' // Prioriza o cargo do perfil
+                ...funcionario,
+                role: funcionario.role || 'staff' // Prioriza o cargo do perfil
             };
 
             // Armazena os dados do usuario no localStorage para persistência
@@ -397,10 +397,10 @@ initAuth();
  * Cadastra um novo usuário no sistema
  * @param {string} email - Email do usuário
  * @param {string} password - Senha do usuário
- * @param {Object} profileData - Dados adicionais do perfil (full_name, role, etc.)
+ * @param {Object} funcionarioData - Dados adicionais do perfil (full_name, role, etc.)
  * @returns {Promise<Object>} Objeto com o resultado do cadastro
  */
-export const signUp = async (email, password, profileData = {}) => {
+export const signUp = async (email, password, funcionarioData = {}) => {
     try {
         // Validação dos parâmetros obrigatórios
         if (!email || !password) {
@@ -413,7 +413,7 @@ export const signUp = async (email, password, profileData = {}) => {
             password,
             options: {
                 data: {
-                    full_name: profileData.full_name || ''
+                    full_name: funcionarioData.full_name || ''
                 }
             }
         });
@@ -421,31 +421,31 @@ export const signUp = async (email, password, profileData = {}) => {
         if (signUpError) throw signUpError;
         if (!authData.user) throw new Error('Falha ao criar usuário');
 
-        // 2. Cria o perfil do usuário na tabela profiles
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
+        // 2. Cria o perfil do usuário na tabela funcionarios
+        const { data: funcionario, error: funcionarioError } = await supabase
+            .from('funcionarios')
             .insert([
                 {
                     id: authData.user.id,
-                    full_name: profileData.full_name || '',
-                    role: profileData.role || 'staff', // Define um papel padrão
+                    full_name: funcionarioData.full_name || '',
+                    role: funcionarioData.role || 'staff', // Define um papel padrão
                     created_at: new Date().toISOString()
                 }
             ])
             .select()
             .single();
 
-        if (profileError) {
+        if (funcionarioError) {
             // Se der erro ao criar o perfil, tenta remover o usuário criado
             await supabase.auth.admin.deleteUser(authData.user.id);
-            throw new Error('Falha ao criar perfil do usuário: ' + profileError.message);
+            throw new Error('Falha ao criar perfil do usuário: ' + funcionarioError.message);
         }
 
         // 3. Atualiza o usuário atual com os dados do perfil
         currentUser = {
             ...authData.user,
-            ...profile,
-            role: profile.role || 'staff'
+            ...funcionario,
+            role: funcionario.role || 'staff'
         };
 
         // Armazena os dados do usuário no localStorage
@@ -472,9 +472,9 @@ export {
 };
 
 // Função para obter o perfil do usuário
-async function getUserProfile(userId) {
+async function getUserFuncionario(userId) {
     const { data, error } = await supabase
-        .from('profiles')
+        .from('funcionarios')
         .select('*')
         .eq('id', userId)
         .single();

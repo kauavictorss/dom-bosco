@@ -39,10 +39,10 @@ export const signIn = async (email, password) => {
         if (error) throw error;
         
         // Busca o perfil do usuario após o login
-        const userProfile = await getUserProfile(data.user.id);
+        const userFuncionario = await getUserFuncionario(data.user.id);
         
         return { 
-            user: { ...data.user, ...userProfile },
+            user: { ...data.user, ...userFuncionario },
             session: data.session 
         };
     } catch (error) {
@@ -95,8 +95,8 @@ export const getCurrentUser = async () => {
         
         if (user) {
             // Busca o perfil do usuario
-            const userProfile = await getUserProfile(user.id);
-            return { ...user, ...userProfile };
+            const userFuncionario = await getUserFuncionario(user.id);
+            return { ...user, ...userFuncionario };
         }
         
         return null;
@@ -111,7 +111,7 @@ export const getCurrentUser = async () => {
  * @param {string} userId - ID do usuario
  * @returns {Promise<Object>} Perfil do usuario
  */
-export const getUserProfile = async (userId) => {
+export const getUserFuncionario = async (userId) => {
     try {
         const { data, error } = await supabase
             .from('users')
@@ -214,7 +214,7 @@ export const onAuthStateChange = (callback) => {
  * @param {Object} updates - Campos para atualizar
  * @returns {Promise<Object>} Dados atualizados do usuario
  */
-export const updateUserProfile = async (userId, updates) => {
+export const updateUserFuncionario = async (userId, updates) => {
     try {
         const { data, error } = await supabase
             .from('users')
