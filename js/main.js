@@ -131,19 +131,20 @@ function setupMobileGestures() {
 }
 
 // Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-    loadDb();
-    populateDemoCredentials(); 
-    
-    if (checkLogin()) {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadDb();
+    populateDemoCredentials();
+
+    const { isAuthenticated } = await checkLogin();
+    if (isAuthenticated) {
         showMainApp();
         initializeApp();
-        checkNotifications(); 
+        checkNotifications();
         resetIdleTimer(); // Start idle timer on initial load if logged in
     } else {
         showLoginScreen();
     }
-    
+
     setupEventListeners();
     setupFormHandlers();
     setupMobileGestures(); 
@@ -274,19 +275,21 @@ function setupEventListeners() {
     document.addEventListener('scroll', resetIdleTimer);
     // --- End Inactivity Logout Event Listeners ---
 
-    document.getElementById('form-login').addEventListener('submit', (e) => {
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-        
-        if (login(username, password)) {
+
+        const result = await login(username, password);
+
+        if (result.success) {
             document.getElementById('form-login').reset();
             showMainApp();
             initializeApp();
-            checkNotifications(); 
+            checkNotifications();
             resetIdleTimer(); // Start idle timer on successful login
         } else {
-            showNotification('Usuário ou senha inválidos!', 'error');
+            showNotification(result.error || 'Usuário ou senha inválidos!', 'error');
         }
     });
 
