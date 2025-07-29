@@ -278,10 +278,10 @@ function setupEventListeners() {
 
     document.getElementById('form-login').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
-        const result = await login(username, password);
+        const result = await login(email, password);
 
         if (result.success) {
             document.getElementById('form-login').reset();
