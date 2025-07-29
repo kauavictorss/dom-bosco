@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login Isolado - Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
+        .container { padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+        input { display: block; width: 300px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+        #result { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Teste de Login Isolado</h1>
+        <p>Este teste é independente do código do projeto (main.js, auth.js, etc).</p>
+        <form id="login-form">
+            <input type="email" id="email" placeholder="Seu Email" required>
+            <input type="password" id="password" placeholder="Sua Senha" required>
+            <button type="submit">Fazer Login</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // IMPORTANTE: Substitua com suas credenciais do Supabase!
+        const SUPABASE_URL = 'COLE_SUA_URL_AQUI';
+        const SUPABASE_ANON_KEY = 'COLE_SUA_CHAVE_ANON_AQUI';
+
+        // Verificação para garantir que as credenciais foram inseridas
+        if (SUPABASE_URL === 'COLE_SUA_URL_AQUI' || SUPABASE_ANON_KEY === 'COLE_SUA_CHAVE_ANON_AQUI') {
+            document.getElementById('result').innerText = 'ERRO: Por favor, edite o arquivo teste_login.html e insira sua URL e Chave Anon do Supabase.';
+            document.getElementById('result').style.color = 'red';
+        }
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.innerText = 'Tentando fazer login...';
+            resultDiv.style.color = 'black';
+            console.log(`Tentando login com: ${email}`);
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                console.log('Login bem-sucedido!', data);
+                resultDiv.innerText = 'Login bem-sucedido! Verifique o console.';
+                resultDiv.style.color = 'green';
+
+            } catch (error) {
+                console.error('Falha no login:', error);
+                resultDiv.innerText = `Falha no login: ${error.message}`;
+                resultDiv.style.color = 'red';
+            }
+        });
+    </script>
+
+</body>
+</html>
