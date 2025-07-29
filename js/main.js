@@ -133,7 +133,6 @@ function setupMobileGestures() {
 // Initialize application
 document.addEventListener('DOMContentLoaded', async () => {
     await loadDb();
-    populateDemoCredentials();
 
     const { isAuthenticated } = await checkLogin();
     if (isAuthenticated) {
@@ -208,6 +207,8 @@ function initializeApp() {
                 documentsControls.style.display = 'none';
             }
         }
+    } else if (checkTabAccess('documentos', 'edit')) {
+        renderGeneralDocuments();
     }
 }
 
@@ -2137,47 +2138,5 @@ function populateNewFuncionarioRoleSelect() {
         option.value = role.id;
         option.textContent = role.name;
         roleSelect.appendChild(option);
-    });
-}
-
-function populateDemoCredentials() {
-    const demoList = document.getElementById('demo-credentials-list');
-    if (!demoList) return;
-
-    demoList.innerHTML = ''; 
-
-    const roleMap = {
-        'director': 'Diretoria (Acesso Total)',
-        'financeiro': 'Financeiro',
-        'coordinator_madre': 'Coord. Madre',
-        'coordinator_floresta': 'Coord. Floresta',
-        'staff': 'Funcionário(a) Geral',
-        'receptionist': 'Recepcionista',
-        'psychologist': 'Psicólogo(a)',
-        'psychopedagogue': 'Psicopedagogo(a)',
-        'musictherapist': 'Musicoterapeuta',
-        'speech_therapist': 'Fonoaudiólogo(a)',
-        'nutritionist': 'Nutricionista',
-        'physiotherapist': 'Fisioterapeuta',
-        'intern': 'Estagiário(a)'
-    };
-
-    // Filter out entries that are explicitly null or empty
-    const filteredUsersForDemo = db.users.filter(user => user.username && user.password);
-
-    const sortedUsers = [...filteredUsersForDemo].sort((a, b) => {
-        const roleA = roleMap[a.role] || a.role; // Use original role or raw if custom
-        const roleB = roleMap[b.role] || b.role; // Use original role or raw if custom
-        if (roleA < roleB) return -1;
-        if (roleA > roleB) return 1;
-        return a.name.localeCompare(b.name);
-    });
-
-    sortedUsers.forEach(user => {
-        const li = document.createElement('li');
-        // Display mapped role or just the raw role if it's a custom one
-        const roleText = roleMap[user.role] || user.role; 
-        li.innerHTML = `<strong>${roleText}:</strong> ${user.username} / ${user.password}`;
-        demoList.appendChild(li);
     });
 }
