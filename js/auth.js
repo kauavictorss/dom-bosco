@@ -100,7 +100,7 @@ export const login = async (email, password) => {
         return {success: true, user: currentUser};
 
     } catch (error) {
-        console.error('Erro ao fazer login:', error.message);
+        console.error('Erro detalhado ao fazer login:', error);
         return {
             success: false,
             error: error.message || 'Falha ao fazer login. Verifique suas credenciais.'

@@ -1,0 +1,21 @@
+// vite.config.js
+import { defineConfig } from "file:///C:/Projetos/dom-bosco/node_modules/vite/dist/node/index.js";
+import { fileURLToPath, URL } from "url";
+var __vite_injected_original_import_meta_url = "file:///C:/Projetos/dom-bosco/vite.config.js";
+var vite_config_default = defineConfig({
+  server: {
+    port: 3e3
+  },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./js", __vite_injected_original_import_meta_url))
+    }
+  },
+  // Carrega as variáveis de ambiente do arquivo .env
+  envDir: ".",
+  envPrefix: "VITE_"
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJDOlxcXFxQcm9qZXRvc1xcXFxkb20tYm9zY29cIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIkM6XFxcXFByb2pldG9zXFxcXGRvbS1ib3Njb1xcXFx2aXRlLmNvbmZpZy5qc1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vQzovUHJvamV0b3MvZG9tLWJvc2NvL3ZpdGUuY29uZmlnLmpzXCI7aW1wb3J0IHsgZGVmaW5lQ29uZmlnIH0gZnJvbSAndml0ZSc7XG5pbXBvcnQgeyBmaWxlVVJMVG9QYXRoLCBVUkwgfSBmcm9tICd1cmwnO1xuXG5leHBvcnQgZGVmYXVsdCBkZWZpbmVDb25maWcoe1xuICBzZXJ2ZXI6IHtcbiAgICBwb3J0OiAzMDAwLFxuICB9LFxuICByZXNvbHZlOiB7XG4gICAgYWxpYXM6IHtcbiAgICAgICdAJzogZmlsZVVSTFRvUGF0aChuZXcgVVJMKCcuL2pzJywgaW1wb3J0Lm1ldGEudXJsKSlcbiAgICB9XG4gIH0sXG4gIC8vIENhcnJlZ2EgYXMgdmFyaVx1MDBFMXZlaXMgZGUgYW1iaWVudGUgZG8gYXJxdWl2byAuZW52XG4gIGVudkRpcjogJy4nLFxuICBlbnZQcmVmaXg6ICdWSVRFXycsXG59KTtcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBdVAsU0FBUyxvQkFBb0I7QUFDcFIsU0FBUyxlQUFlLFdBQVc7QUFEb0gsSUFBTSwyQ0FBMkM7QUFHeE0sSUFBTyxzQkFBUSxhQUFhO0FBQUEsRUFDMUIsUUFBUTtBQUFBLElBQ04sTUFBTTtBQUFBLEVBQ1I7QUFBQSxFQUNBLFNBQVM7QUFBQSxJQUNQLE9BQU87QUFBQSxNQUNMLEtBQUssY0FBYyxJQUFJLElBQUksUUFBUSx3Q0FBZSxDQUFDO0FBQUEsSUFDckQ7QUFBQSxFQUNGO0FBQUE7QUFBQSxFQUVBLFFBQVE7QUFBQSxFQUNSLFdBQVc7QUFDYixDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=
