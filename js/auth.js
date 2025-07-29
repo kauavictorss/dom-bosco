@@ -36,10 +36,17 @@ export const initAuth = () => {
             // Usuário fez login ou a sessão foi restaurada
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id);
+                if (!profile) {
+                    console.error('Perfil não encontrado para o usuário:', session.user.id);
+                    // Deslogar o usuário se o perfil não existe para evitar estado inconsistente
+                    await logout();
+                    return;
+                }
+
                 currentUser = {
                     ...session.user,
                     ...profile,
-                    role: session.user.role || profile.role || 'staff' // Função padrão se não estiver definida
+                    role: profile.role || 'staff' // Prioriza o perfil, fallback para 'staff'
                 };
                 // Armazena os dados do usuario no localStorage para persistência
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -73,14 +80,18 @@ export const login = async (email, password) => {
 
         if (error) throw error;
 
-        // Obtém o perfil do usuario após o login
         const profile = await getUserProfile(data.user.id);
+
+        if (!profile) {
+            console.error('Perfil não encontrado para o usuário:', data.user.id);
+            throw new Error('Perfil de usuário não encontrado. Acesso negado.');
+        }
 
         // Atualiza o usuario atual com os dados do perfil
         currentUser = {
             ...data.user,
             ...profile,
-            role: data.user.role || profile?.role || 'staff' // Função padrão se não estiver definida
+            role: profile.role || 'staff' // Prioriza o cargo do perfil
         };
 
         // Armazena os dados do usuario no localStorage para persistência
@@ -155,14 +166,20 @@ export const checkLogin = async () => {
                 return {isAuthenticated: false};
             }
 
-            // Busca o perfil do usuario
             const profile = await getUserProfile(user.id);
+
+            if (!profile) {
+                console.error('Perfil não encontrado para o usuário:', user.id);
+                // Se não há perfil, a sessão pode ser inválida, então limpamos.
+                await logout();
+                return { isAuthenticated: false };
+            }
 
             // Atualiza o usuario atual
             currentUser = {
                 ...user,
                 ...profile,
-                role: user.role || profile?.role || 'staff' // Função padrão se não estiver definida
+                role: profile.role || 'staff' // Prioriza o cargo do perfil
             };
 
             // Armazena os dados do usuario no localStorage para persistência
@@ -391,7 +408,7 @@ async function getUserProfile(userId) {
 
     if (error) {
         console.error('Erro ao buscar perfil:', error);
-        return {};
+        return null; // Retorna null em caso de erro para ser tratado
     }
     return data;
 }
