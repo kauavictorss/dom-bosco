@@ -43,3 +43,22 @@ export const DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS = ['director', 'coordinato
 
 // Todos os usuários para visibilidade de abas (ex: visualização geral do "Mural do Coordenador")
 export const ALL_USERS = ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'musictherapist', 'financeiro', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'];
+
+/**
+ * Initializes the role management interface (e.g., populating lists, setting up event handlers).
+ */
+export function initRolesManagement() {
+    // TODO: Implement logic to display and manage custom roles.
+    console.log('Inicializando gerenciamento de cargos...');
+}
+
+/**
+ * Deletes a custom role.
+ */
+export function deleteRole(roleId) {
+    // TODO: Implement logic to delete a role from the database and update the UI.
+    console.log(`Excluindo cargo com ID: ${roleId}`);
+    if (confirm('Tem certeza que deseja excluir este cargo?')) {
+        alert(`Placeholder para excluir o cargo ${roleId}.`);
+    }
+}

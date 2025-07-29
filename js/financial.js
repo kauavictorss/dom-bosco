@@ -1,6 +1,7 @@
 // Financial reporting module
 import { db, saveDb } from './database.js';
-import { getCurrentUser, isRoleAllowed, DIRECTOR_OR_FINANCE, DIRECTOR_ONLY } from './auth.js'; // Import isRoleAllowed and new role constant
+import { getCurrentUser, isRoleAllowed } from './auth.js'; // Import isRoleAllowed
+import { DIRECTOR_OR_FINANCE, DIRECTOR_ONLY } from './roles.js';
 import { showNotification } from './ui.js';
 import { serviceNames } from './schedule.js'; // Import serviceNames for detailed reports
 

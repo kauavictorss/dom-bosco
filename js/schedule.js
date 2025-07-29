@@ -1,6 +1,7 @@
 // Schedule management module
 import { db, saveDb } from './database.js';
-import { getCurrentUser, isRoleAllowed, PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, ALL_SCHEDULE_VIEW_EDIT_MANAGERS, checkTabAccess } from './auth.js'; // Import constants
+import { getCurrentUser, isRoleAllowed, checkTabAccess } from './auth.js';
+import { PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, ALL_SCHEDULE_VIEW_EDIT_MANAGERS } from './roles.js';
 import { showNotification } from './ui.js';
 import { showClientDetails } from './clients.js'; // Import showClientDetails to re-render client modal
 
@@ -474,6 +475,7 @@ export function renderCalendar() {
     if (isManager) {
         const profFilterSelect = document.getElementById('professional-filter-select');
         if (profFilterSelect) professionalIdFilter = profFilterSelect.value;
+        
         const unitFilterSelect = document.getElementById('unit-filter-select');
         if (unitFilterSelect) unitFilter = unitFilterSelect.value;
     }

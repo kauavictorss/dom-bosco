@@ -1,13 +1,15 @@
 // Main application entry point
 import { loadDb, saveDb, db } from './database.js';
-import { login, logout, checkLogin, getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, STOCK_MANAGERS, ALL_USERS, PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS, checkTabAccess } from './auth.js'; 
+import { login, logout, checkLogin, getCurrentUser, isRoleAllowed, checkTabAccess } from './auth.js';
+import { DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, STOCK_MANAGERS, ALL_USERS, PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS } from './roles.js';
 import { showLoginScreen, showMainApp, switchTab, updateCurrentDate, showNotification, updateGlobalSearchDatalist } from './ui.js'; 
 import { renderClientList, showClientDetails, addClientNote, addClientDocument, deleteClientDocument, renderMeusPacientes, renderClientReport, showAssignProfessionalModal, assignProfessionalToClient, unassignProfessionalFromClient, deleteClient, duplicateClient, showEmployeeReport, showClientReportModal, generateClientReport } from './clients.js'; 
 import { renderSchedule, updateScheduleStatus, initializeCalendar, renderCalendar, saveEditedSchedule, cancelScheduleWithReason, reassignSchedule, populateAssignableUsers, serviceNames, editSchedule, saveReassignedSchedule, initScheduleView } from './schedule.js'; 
 import { renderFinancialReport, renderDailyNotes, addDailyNote, generateDetailedFinancialReport, downloadDailyNotes, deleteDailyNote } from './financial.js'; 
 import { setupFormHandlers } from './forms.js';
 import { renderStockList, renderStockMovements, updateStockSummary, showDeleteStockItemConfirmation } from './stock.js';
-import { renderFuncionarioList, showFuncionarioDetails, showEditFuncionarioModal, saveFuncionarioChanges, deleteFuncionario, addFuncionario, showEditPasswordModal, populateTabPermissions, saveUserPermissions, initRolesManagement, deleteRole } from './funcionarios.js'; 
+import { renderFuncionarioList, showFuncionarioDetails, showEditFuncionarioModal, saveFuncionarioChanges, deleteFuncionario, addFuncionario, showEditPasswordModal, saveUserPermissions } from './funcionarios.js';
+import { initRolesManagement, deleteRole } from './roles.js';
 import { convertTimeToDecimalHours } from './utils.js'; 
 
 // --- Inactivity Logout Variables ---

@@ -1,6 +1,7 @@
 // Stock management module
 import { db, saveDb } from './database.js';
-import { getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, STOCK_MANAGERS } from './auth.js';
+import { getCurrentUser, isRoleAllowed } from './auth.js';
+import { DIRECTOR_ONLY, STOCK_MANAGERS } from './roles.js';
 
 export function renderStockList() {
     const stockList = document.getElementById('stock-list');

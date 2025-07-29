@@ -3,30 +3,13 @@
  * Gerencia o estado de autenticação do usuario e controle de acesso baseado em funções
  */
 
-import {
-    supabase,
-    getCurrentUser as getSupabaseUser,
-    getUserProfile,
-    onAuthStateChange,
-    signIn as supabaseSignIn,
-    signOut as supabaseSignOut,
-} from '@supabase/supabase-js';
+import { supabase } from './supabase.js'; // Correct import for the client
+import { showNotification } from './ui.js';
+import { db, saveDb } from './database.js';
 
 import {
     PROFESSIONAL_ROLES,
     DIRECTOR_ONLY,
-    FINANCE_ONLY,
-    DIRECTOR_OR_FINANCE,
-    STOCK_MANAGERS,
-    COORDINATOR_AND_HIGHER,
-    ALL_USERS,
-    NON_FINANCE_ACCESS,
-    DIRECTOR_AND_PROFESSIONALS,
-    ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES,
-    SCHEDULE_MANAGERS,
-    DOCUMENT_MANAGERS,
-    ALL_SCHEDULE_VIEW_EDIT_MANAGERS,
-    DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS
 } from './roles.js';
 
 // Estado global do usuario autenticado
@@ -42,22 +25,21 @@ let authUnsubscribe = null;
 export const initAuth = () => {
     // Limpa qualquer listener existente
     if (authUnsubscribe) {
-        authUnsubscribe();
+        authUnsubscribe.unsubscribe();
     }
 
     // Configura o listener de mudanças de estado de autenticação
-    authUnsubscribe = onAuthStateChange(async (event, session) => {
-        console.log('Evento de autenticação:', event);
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Evento de autenticação:', event, session);
 
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             // Usuário fez login ou a sessão foi restaurada
-            const user = await getSupabaseUser();
-            if (user) {
-                const profile = await getUserProfile(user.id);
+            if (session?.user) {
+                const profile = await getUserProfile(session.user.id);
                 currentUser = {
-                    ...user,
+                    ...session.user,
                     ...profile,
-                    role: user.role || profile.role || 'staff' // Função padrão se não estiver definida
+                    role: session.user.role || profile.role || 'staff' // Função padrão se não estiver definida
                 };
                 // Armazena os dados do usuario no localStorage para persistência
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -70,6 +52,7 @@ export const initAuth = () => {
             console.log('Usuário deslogado');
         }
     });
+    authUnsubscribe = data.subscription;
 };
 
 /**
@@ -86,18 +69,18 @@ export const login = async (email, password) => {
         }
 
         // Tenta fazer login usando o Supabase
-        const {user, error} = await supabaseSignIn(email, password);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) throw error;
 
         // Obtém o perfil do usuario após o login
-        const profile = await getUserProfile(user.id);
+        const profile = await getUserProfile(data.user.id);
 
         // Atualiza o usuario atual com os dados do perfil
         currentUser = {
-            ...user,
+            ...data.user,
             ...profile,
-            role: user.role || profile?.role || 'staff' // Função padrão se não estiver definida
+            role: data.user.role || profile?.role || 'staff' // Função padrão se não estiver definida
         };
 
         // Armazena os dados do usuario no localStorage para persistência
@@ -121,7 +104,7 @@ export const login = async (email, password) => {
 export const logout = async () => {
     try {
         // Faz logout no Supabase
-        const {error} = await supabaseSignOut();
+        const { error } = await supabase.auth.signOut();
 
         if (error) throw error;
 
@@ -157,7 +140,7 @@ export const checkLogin = async () => {
         }
 
         // Se não há usuario armazenado, verifica se há uma sessão ativa no Supabase
-        const {data: {session}, error} = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
             console.error('Erro ao verificar sessão:', error);
@@ -166,7 +149,7 @@ export const checkLogin = async () => {
 
         if (session?.user) {
             // Se há uma sessão ativa, busca os dados completos do usuario
-            const user = await getSupabaseUser();
+            const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
                 return {isAuthenticated: false};
@@ -341,6 +324,7 @@ export const updateUserPassword = async (userId, newPassword) => {
 
         // Atualiza a senha usando o Supabase
         const {data, error} = await supabase.auth.updateUser({
+            id: userId,
             password: newPassword
         });
 
@@ -407,8 +391,19 @@ initAuth();
 // Exporta as funções auxiliares para uso em outros módulos
 export {
     hasAnyRole,
-    hasFinanceAccess,
-    isAdmin,
-    isCoordinatorOrHigher,
-    isProfessional
 };
+
+// Função para obter o perfil do usuário
+async function getUserProfile(userId) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+    if (error) {
+        console.error('Erro ao buscar perfil:', error);
+        return {};
+    }
+    return data;
+}

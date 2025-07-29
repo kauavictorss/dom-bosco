@@ -1,6 +1,7 @@
 // Client management module
 import { db, saveDb } from './database.js';
-import { getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, checkTabAccess } from './auth.js'; // Import new constants
+import { getCurrentUser, isRoleAllowed, checkTabAccess } from './auth.js'; // Import new constants
+import { PROFESSIONAL_ROLES, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, COORDINATOR_AND_HIGHER } from './roles.js';
 import { showNotification, updateGlobalSearchDatalist, switchTab } from './ui.js';
 import { formatDuration } from './utils.js'; // Import the new utility function
 
@@ -1739,7 +1740,7 @@ function generateEmployeeReport(employeeId, selectedPeriod) {
                 </div>
             ` : '<p>Nenhum atendimento realizado no período selecionado.</p>'}
         </div>
-
+        
         <div class="report-section">
             <h3>Lista de Pacientes Vinculados</h3>
             ${assignedClients.length > 0 ? `

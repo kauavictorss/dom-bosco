@@ -1,6 +1,7 @@
 // UI management module
 import { db } from './database.js';
-import { getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, PROFESSIONAL_ROLES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS, STOCK_MANAGERS, ALL_USERS, checkTabAccess } from './auth.js';
+import { getCurrentUser, isRoleAllowed, checkTabAccess } from './auth.js';
+import { DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, PROFESSIONAL_ROLES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS, STOCK_MANAGERS, ALL_USERS } from './roles.js';
 
 export function showLoginScreen() {
     document.getElementById('login-screen').style.display = 'flex';
