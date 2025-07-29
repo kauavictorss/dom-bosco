@@ -121,33 +121,53 @@ export const getCurrentUser = async () => {
 };
 
 /**
- * Obtém o perfil do usuario a partir do banco de dados
- * @param {string} userId - ID do usuario
- * @returns {Promise<Object>} Perfil do usuario
+ * Obtém o perfil do usuário a partir do banco de dados
+ * @param {string} userId - ID do usuário no Supabase Auth
+ * @param {string} userEmail - Email do usuário
+ * @returns {Promise<Object>} Perfil do usuário
  */
-export const getUserFuncionario = async (userId) => {
-    console.log(`Buscando perfil do funcionário para o ID: ${userId} na tabela 'funcionarios'`);
+export const getUserFuncionario = async (userId, userEmail) => {
+    console.log(`Buscando perfil do funcionário para o email: ${userEmail} na tabela 'funcionarios'`);
+    
     try {
-        const {data, error} = await supabase
-            .from('funcionarios')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (error) {
-            console.error('Erro ao buscar perfil do funcionário:', error);
-            return null;
+        // Primeiro tenta buscar pelo email (mais confiável)
+        if (userEmail) {
+            const { data: byEmail, error: emailError } = await supabase
+                .from('funcionarios')
+                .select('*')
+                .eq('email', userEmail)
+                .single();
+                
+            if (byEmail && !emailError) {
+                console.log('Perfil encontrado pelo email:', byEmail);
+                return byEmail;
+            } else if (emailError) {
+                console.error('Erro ao buscar por email:', emailError);
+            }
+        }
+        
+        // Se não encontrou pelo email, tenta pelo ID (para compatibilidade)
+        if (userId) {
+            console.log(`Tentando buscar pelo ID: ${userId}...`);
+            const { data: byId, error: idError } = await supabase
+                .from('funcionarios')
+                .select('*')
+                .eq('id', userId)
+                .single();
+                
+            if (byId && !idError) {
+                console.log('Perfil encontrado pelo ID:', byId);
+                return byId;
+            } else if (idError) {
+                console.error('Erro ao buscar por ID:', idError);
+            }
         }
 
-        if (!data) {
-            console.error('Nenhum perfil encontrado para o ID:', userId);
-            return null;
-        }
+        console.error('Nenhum perfil encontrado para o email ou ID fornecidos');
+        return null;
 
-        console.log('Perfil do funcionário encontrado:', data);
-        return data;
     } catch (error) {
-        console.error('Exceção ao buscar perfil do funcionário:', error);
+        console.error('Erro ao buscar perfil do funcionário:', error);
         return null;
     }
 };

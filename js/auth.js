@@ -97,35 +97,23 @@ export const login = async (email, password) => {
         console.log('ID do usuário no Supabase Auth:', data.user.id);
         console.log('Email do usuário:', data.user.email);
         
-        // Primeiro tenta buscar pelo ID do usuário
-        let funcionario = await getUserFuncionario(data.user.id);
+        // Busca o funcionário pelo email (e opcionalmente pelo ID para compatibilidade)
+        const funcionario = await getUserFuncionario(data.user.id, data.user.email);
         
-        // Se não encontrar, tenta buscar pelo email
-        if (!funcionario) {
-            console.log('Perfil não encontrado pelo ID, tentando buscar pelo email...');
-            const { data: funcionarioData, error: funcError } = await supabase
+        // Se encontrou o funcionário, verifica se o ID precisa ser atualizado
+        if (funcionario && funcionario.id !== data.user.id) {
+            console.log('Atualizando ID do funcionário para corresponder ao Supabase Auth...');
+            const { error: updateError } = await supabase
                 .from('funcionarios')
-                .select('*')
-                .eq('email', data.user.email)
-                .single();
+                .update({ id: data.user.id })
+                .eq('id', funcionario.id);
                 
-            if (funcError) {
-                console.error('Erro ao buscar funcionário por email:', funcError);
-            } else if (funcionarioData) {
-                console.log('Perfil encontrado pelo email:', funcionarioData);
-                funcionario = funcionarioData;
-                
-                // Atualiza o ID do funcionário para corresponder ao ID do Supabase Auth
-                const { error: updateError } = await supabase
-                    .from('funcionarios')
-                    .update({ id: data.user.id })
-                    .eq('id', funcionario.id);
-                    
-                if (updateError) {
-                    console.error('Erro ao atualizar ID do funcionário:', updateError);
-                } else {
-                    console.log('ID do funcionário atualizado com sucesso');
-                }
+            if (updateError) {
+                console.error('Erro ao atualizar ID do funcionário:', updateError);
+            } else {
+                console.log('ID do funcionário atualizado com sucesso');
+                // Atualiza o ID no objeto do funcionário
+                funcionario.id = data.user.id;
             }
         }
         
