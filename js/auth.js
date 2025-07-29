@@ -485,8 +485,7 @@ export const onAuthStateChange = (callback) => {
 
 // Exporta as funções auxiliares para uso em outros módulos
 export {
-    hasAnyRole,
-    onAuthStateChange,
+    hasAnyRole
 };
 
 // Função para obter o perfil do usuário
