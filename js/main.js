@@ -278,19 +278,40 @@ function setupEventListeners() {
 
     document.getElementById('form-login').addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('Formulário de login submetido');
+        
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        
+        console.log('Email digitado:', email);
+        console.log('Tentando fazer login...');
+        
+        try {
+            const result = await login(email, password);
+            console.log('Resultado do login:', result);
 
-        const result = await login(email, password);
-
-        if (result.success) {
-            document.getElementById('form-login').reset();
-            showMainApp();
-            initializeApp();
-            checkNotifications();
-            resetIdleTimer(); // Start idle timer on successful login
-        } else {
-            showNotification(result.error || 'Usuário ou senha inválidos!', 'error');
+            if (result.success) {
+                console.log('Login bem-sucedido, redirecionando...');
+                document.getElementById('form-login').reset();
+                showMainApp();
+                initializeApp();
+                checkNotifications();
+                resetIdleTimer(); // Start idle timer on successful login
+            } else {
+                console.error('Falha no login:', result.error);
+                const errorElement = document.getElementById('login-error');
+                if (errorElement) {
+                    errorElement.textContent = result.error || 'Falha no login. Verifique suas credenciais.';
+                    errorElement.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('Erro durante o login:', error);
+            const errorElement = document.getElementById('login-error');
+            if (errorElement) {
+                errorElement.textContent = 'Erro ao processar o login. Tente novamente.';
+                errorElement.style.display = 'block';
+            }
         }
     });
 
