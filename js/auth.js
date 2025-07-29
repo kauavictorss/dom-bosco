@@ -393,6 +393,79 @@ export const isProfessional = (user) => {
 // Inicializa a autenticação quando o módulo for carregado
 initAuth();
 
+/**
+ * Cadastra um novo usuário no sistema
+ * @param {string} email - Email do usuário
+ * @param {string} password - Senha do usuário
+ * @param {Object} profileData - Dados adicionais do perfil (full_name, role, etc.)
+ * @returns {Promise<Object>} Objeto com o resultado do cadastro
+ */
+export const signUp = async (email, password, profileData = {}) => {
+    try {
+        // Validação dos parâmetros obrigatórios
+        if (!email || !password) {
+            throw new Error('Email e senha são obrigatórios');
+        }
+
+        // 1. Cria o usuário no sistema de autenticação
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: profileData.full_name || ''
+                }
+            }
+        });
+
+        if (signUpError) throw signUpError;
+        if (!authData.user) throw new Error('Falha ao criar usuário');
+
+        // 2. Cria o perfil do usuário na tabela profiles
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+                {
+                    id: authData.user.id,
+                    full_name: profileData.full_name || '',
+                    role: profileData.role || 'staff', // Define um papel padrão
+                    created_at: new Date().toISOString()
+                }
+            ])
+            .select()
+            .single();
+
+        if (profileError) {
+            // Se der erro ao criar o perfil, tenta remover o usuário criado
+            await supabase.auth.admin.deleteUser(authData.user.id);
+            throw new Error('Falha ao criar perfil do usuário: ' + profileError.message);
+        }
+
+        // 3. Atualiza o usuário atual com os dados do perfil
+        currentUser = {
+            ...authData.user,
+            ...profile,
+            role: profile.role || 'staff'
+        };
+
+        // Armazena os dados do usuário no localStorage
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        return {
+            success: true,
+            user: currentUser,
+            message: 'Usuário cadastrado com sucesso! Verifique seu email para confirmar o cadastro.'
+        };
+    } catch (error) {
+        console.error('Erro ao cadastrar usuário:', error);
+        return {
+            success: false,
+            error: error.message || 'Erro ao cadastrar usuário',
+            details: error
+        };
+    }
+};
+
 // Exporta as funções auxiliares para uso em outros módulos
 export {
     hasAnyRole,
