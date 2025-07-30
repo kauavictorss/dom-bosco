@@ -52,8 +52,8 @@ export const signIn = async (email, password) => {
 
         if (error) throw error;
 
-        // Busca o perfil do usuario após o login
-        const userFuncionario = await getUserFuncionario(data.user.id);
+        // Busca o perfil do usuário pelo email após o login
+        const userFuncionario = await getUserFuncionario(data.user.email);
 
         return {
             user: {...data.user, ...userFuncionario},
@@ -108,8 +108,8 @@ export const getCurrentUser = async () => {
         if (error) throw error;
 
         if (user) {
-            // Busca o perfil do usuario
-            const userFuncionario = await getUserFuncionario(user.id);
+            // Busca o perfil do usuário pelo email
+            const userFuncionario = await getUserFuncionario(user.email);
             return {...user, ...userFuncionario};
         }
 

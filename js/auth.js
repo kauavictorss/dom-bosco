@@ -35,9 +35,10 @@ export const initAuth = () => {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             // Usuário fez login ou a sessão foi restaurada
             if (session?.user) {
-                const funcionario = await getUserFuncionario(session.user.id);
+                // Busca o perfil do funcionário pelo email (não pelo ID)
+                const funcionario = await getUserFuncionario(session.user.email);
                 if (!funcionario) {
-                    console.error('Perfil não encontrado para o usuário:', session.user.id);
+                    console.error('Perfil não encontrado para o email:', session.user.email);
                     // Deslogar o usuário se o perfil não existe para evitar estado inconsistente
                     await logout();
                     return;
@@ -201,10 +202,11 @@ export const checkLogin = async () => {
                 return {isAuthenticated: false};
             }
 
-            const funcionario = await getUserFuncionario(user.id);
+            // Busca o perfil do funcionário pelo email (não pelo ID)
+            const funcionario = await getUserFuncionario(user.email);
 
             if (!funcionario) {
-                console.error('Perfil não encontrado para o usuário:', user.id);
+                console.error('Perfil não encontrado para o email:', user.email);
                 // Se não há perfil, a sessão pode ser inválida, então limpamos.
                 await logout();
                 return {isAuthenticated: false};
