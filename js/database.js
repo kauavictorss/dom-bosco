@@ -482,7 +482,7 @@ export function loadDb() {
         saveDb(); // Save the updated state to localStorage
     } else {
         // If no storedDb, add simplified stock items and a test client for initial setup
-        const newStockItems = [
+        db.stockItems = [
             {
                 id: 1,
                 name: 'Lápis HB',
@@ -1884,8 +1884,6 @@ export function loadDb() {
                 unitValue: 38.00
             }
         ];
-
-        db.stockItems = newStockItems;
 
         // Add a test client if no stored data exists (initial load)
         db.clients.push({
